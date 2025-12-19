@@ -195,72 +195,78 @@ for i, (title, msg, color) in enumerate(flags):
         c.error(f"{title}: {msg}")
 
 # -----------------------------------------------------
-# Local AI Explanation (Llama 3.2 1B)
+# Local AI Explanation (OPTIONAL, Local Only)
 # -----------------------------------------------------
 st.subheader("LLM-Generated Insights by LoanScore+")
 
-from llama_cpp import Llama
-
-MODEL_PATH = "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
-
-if not os.path.exists(MODEL_PATH):
-    st.error("Local model not found. Add Llama-3.2-1B-Instruct-Q4_K_M.gguf to models/ folder.")
+if IS_STREAMLIT_CLOUD:
+    st.warning(
+        "LLM explanation is disabled in cloud deployment.\n\n"
+        "This feature runs locally using an offline LLM (LLaMA 3.2 1B) "
+        "and is available during local execution and demos."
+    )
 else:
-    llm = Llama(
-        model_path=MODEL_PATH,
-        n_ctx=4096,
-        n_threads=4,      # adjust for your CPU
-        n_gpu_layers=0    # CPU-only mode
-    )
+    try:
+        from llama_cpp import Llama
 
-    # Build the prompt
-    system_prompt = (
-        "You are a senior financial credit analyst for a digital lender. "
-        "Write clear, professional, helpful explanations for customers. "
-        "Avoid technical terms and machine learning references."
-    )
+        MODEL_PATH = "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
 
-    top_feat_txt = "\n".join([f"- {n}: value={round(v,2)}, impact={round(c,3)}" for n, c, v in top_feats])
-    emi_txt = (
-        f"Income: {emi['income_monthly']}\n"
-        f"Current EMI: {emi['current_emi_load']}\n"
-        f"Safe EMI range: {emi['safe_min']} – {emi['safe_max']}\n"
-        f"Utilization%: {emi['utilization_pct']}"
-    )
-    flags_txt = "\n".join([f"- {t}: {msg}" for t, msg, _ in flags])
+        if not os.path.exists(MODEL_PATH):
+            st.error("Local LLM model not found in models/ folder.")
+        else:
+            llm = Llama(
+                model_path=MODEL_PATH,
+                n_ctx=4096,
+                n_threads=4,
+                n_gpu_layers=0
+            )
 
-    user_prompt = f"""
+            system_prompt = (
+                "You are a senior financial credit analyst. "
+                "Explain loan eligibility in simple, non-technical language."
+            )
+
+            top_feat_txt = "\n".join(
+                [f"- {n}: value={round(v,2)}, impact={round(c,3)}"
+                 for n, c, v in top_feats]
+            )
+
+            emi_txt = (
+                f"Income: {emi['income_monthly']}\n"
+                f"Current EMI: {emi['current_emi_load']}\n"
+                f"Safe EMI range: {emi['safe_min']} – {emi['safe_max']}\n"
+                f"Utilization%: {emi['utilization_pct']}"
+            )
+
+            flags_txt = "\n".join([f"- {t}: {msg}" for t, msg, _ in flags])
+
+            user_prompt = f"""
 Loan Eligibility Score: {score}
 
-Key financial indicators:
+Key indicators:
 {top_feat_txt}
 
 EMI affordability:
 {emi_txt}
 
-Credit behaviour flags:
+Credit behaviour:
 {flags_txt}
 
-Write:
-• A 3–5 sentence explanation suitable for a loan applicant.
-• 3 practical steps to improve eligibility.
+Write a short customer-friendly explanation and 3 improvement tips.
 """
 
-    with st.spinner("Generating explanation using LLM..."):
-        result = llm(
-            f"<s>[INST]<<SYS>> {system_prompt} <</SYS>> {user_prompt} [/INST]",
-            max_tokens=300,
-            temperature=0.3,
-        )
+            with st.spinner("Generating explanation using local AI..."):
+                result = llm(
+                    f"<s>[INST]<<SYS>> {system_prompt} <</SYS>> {user_prompt} [/INST]",
+                    max_tokens=300,
+                    temperature=0.3,
+                )
 
-    response_text = result["choices"][0]["text"]
-    st.markdown("### LLM Explanation")
-    st.markdown(response_text)
+            st.markdown("### LLM Explanation")
+            st.markdown(result["choices"][0]["text"])
 
-st.markdown("---")
-st.info("The information shown here is based on synthetic financial activity "
-        "created for testing and validation. This environment does not process "
-        "or store any personal customer data.")
+    except Exception as e:
+        st.error("Local AI explanation unavailable on this system.")
 
 from ui.layout import render_page
 def main():
