@@ -21,6 +21,8 @@ import numpy as np
 from datetime import datetime
 from src.feature_extraction import extract_features_from_json
 from ui.layout import render_page
+IS_STREAMLIT_CLOUD = os.environ.get("STREAMLIT_RUNTIME") == "true"
+
 
 st.set_page_config(page_title="LoanScore+ (JSON) — Professional", layout="wide")
 st.title("LoanScore+ — Private Demo (JSON Upload)")
