@@ -21,6 +21,9 @@ import numpy as np
 from datetime import datetime
 from src.feature_extraction import extract_features_from_json
 from ui.layout import render_page
+
+st.write("Groq key loaded:", bool(os.environ.get("GROQ_API_KEY")))
+
 IS_STREAMLIT_CLOUD = os.environ.get("STREAMLIT_RUNTIME") == "true"
 
 
