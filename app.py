@@ -202,76 +202,37 @@ for i, (title, msg, color) in enumerate(flags):
 # -----------------------------------------------------
 # Local AI Explanation (OPTIONAL, Local Only)
 # -----------------------------------------------------
-st.subheader("LLM-Generated Insights by LoanScore+")
+st.subheader("AI-Generated Loan Explanation")
 
-if IS_STREAMLIT_CLOUD:
-    st.warning(
-        "LLM explanation is disabled in cloud deployment.\n\n"
-        "This feature runs locally using an offline LLM (LLaMA 3.2 1B) "
-        "and is available during local execution and demos."
-    )
-else:
-    try:
-        from llama_cpp import Llama
+try:
+    from src.llm_cloud import run_groq_llm
 
-        MODEL_PATH = "models/Llama-3.2-1B-Instruct-Q4_K_M.gguf"
-
-        if not os.path.exists(MODEL_PATH):
-            st.error("Local LLM model not found in models/ folder.")
-        else:
-            llm = Llama(
-                model_path=MODEL_PATH,
-                n_ctx=4096,
-                n_threads=4,
-                n_gpu_layers=0
-            )
-
-            system_prompt = (
-                "You are a senior financial credit analyst. "
-                "Explain loan eligibility in simple, non-technical language."
-            )
-
-            top_feat_txt = "\n".join(
-                [f"- {n}: value={round(v,2)}, impact={round(c,3)}"
-                 for n, c, v in top_feats]
-            )
-
-            emi_txt = (
-                f"Income: {emi['income_monthly']}\n"
-                f"Current EMI: {emi['current_emi_load']}\n"
-                f"Safe EMI range: {emi['safe_min']} – {emi['safe_max']}\n"
-                f"Utilization%: {emi['utilization_pct']}"
-            )
-
-            flags_txt = "\n".join([f"- {t}: {msg}" for t, msg, _ in flags])
-
-            user_prompt = f"""
+    llm_prompt = f"""
 Loan Eligibility Score: {score}
 
-Key indicators:
+Top contributing factors:
 {top_feat_txt}
 
 EMI affordability:
 {emi_txt}
 
-Credit behaviour:
+Credit behaviour flags:
 {flags_txt}
 
-Write a short customer-friendly explanation and 3 improvement tips.
+Write:
+• A short explanation suitable for a loan applicant
+• 3 actionable tips to improve eligibility
 """
 
-            with st.spinner("Generating explanation using local AI..."):
-                result = llm(
-                    f"<s>[INST]<<SYS>> {system_prompt} <</SYS>> {user_prompt} [/INST]",
-                    max_tokens=300,
-                    temperature=0.3,
-                )
+    with st.spinner("Generating AI explanation..."):
+        explanation = run_groq_llm(llm_prompt)
 
-            st.markdown("### LLM Explanation")
-            st.markdown(result["choices"][0]["text"])
+    st.markdown("### AI Explanation")
+    st.markdown(explanation)
 
-    except Exception as e:
-        st.error("Local AI explanation unavailable on this system.")
+except Exception as e:
+    st.warning("AI explanation is temporarily unavailable.")
+    st.code(str(e))
 
 from ui.layout import render_page
 def main():
