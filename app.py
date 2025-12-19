@@ -111,7 +111,7 @@ flags = compute_credit_flags(feats)
 flags_txt = "\n".join([f"- {t}: {m}" for t, m, _ in flags])
 
 # ---------------- GROQ LLM ----------------
-st.subheader("AI-Generated Loan Explanation")
+st.subheader("LLM-Generated Loan Explanation")
 
 try:
     from src.llm_cloud import run_groq_llm
@@ -133,14 +133,14 @@ Write:
 • 3 actionable tips to improve eligibility
 """
 
-    with st.spinner("Generating AI explanation..."):
+    with st.spinner("Generating LLM explanation..."):
         explanation = run_groq_llm(llm_prompt)
 
-    st.markdown("### AI Explanation")
+    st.markdown("### LLM Explanation")
     st.markdown(explanation)
 
 except Exception as e:
-    st.warning("AI explanation unavailable")
+    st.warning("LLM explanation unavailable")
     st.code(str(e))
 
 st.info("Demo uses synthetic data only.")
