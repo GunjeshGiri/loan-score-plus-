@@ -6,6 +6,12 @@ from core.data_processing import compute_emi_affordability, compute_credit_flags
 from core.llm_local import generate_local_explanation
 import json
 
+
+
+def render_page():
+    st.header("LoanScore+")
+    st.markdown("Upload a JSON and view results below.")
+
 def render_profile_card(user_profile):
     def body():
         st.write(f"**{user_profile.get('name')}**")
